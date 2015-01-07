@@ -16,7 +16,7 @@ from blaze.server.server import to_tree, from_tree
 
 from mbs.app import setup_app
 from mbs.settings import settings
-
+from . import config_file
 test = None
 data = None
 t = None
@@ -27,7 +27,7 @@ def setup_function():
     global data
     global t
 
-    config = pjoin(dirname(__file__), "test_config.py")
+    config = config_file("config.py")
     app = setup_app(config_file=config)
     test = app.test_client()
     data = settings.data
@@ -38,7 +38,7 @@ def setup_iris():
     global test
     global data
     global t
-    config = pjoin(dirname(__file__), "test_config_iris.py")
+    config = config_file("config_iris.py")
     app = setup_app(config_file=config)
     test = app.test_client()
     data = settings.data

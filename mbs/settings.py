@@ -2,6 +2,7 @@ import os
 import imp
 import uuid
 import copy
+from .auth import SingleUserAuthenticationBackend
 
 defaults = dict(
     data_directory=os.getcwd(),
@@ -10,10 +11,11 @@ defaults = dict(
     ip="0.0.0.0",
     port=6039,
     url_prefix="",
+    auth_backend=SingleUserAuthenticationBackend(admin=True)
 )
 
 class Settings(object):
-    bp_settings = ['data_directory', 'data', 'multi_user']
+    bp_settings = ['data_directory', 'data', 'multi_user', 'auth_backend']
     app_settings = ['ip', 'port', 'url_prefix']
 
     def reset(self):
