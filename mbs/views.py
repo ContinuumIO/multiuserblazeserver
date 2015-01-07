@@ -1,9 +1,9 @@
 import json
-from os.path import join, dirname, exists
+from os.path import join, dirname, exists, relpath
 import os
 
 from werkzeug.utils import secure_filename
-from flask import request, abort
+from flask import request, abort, jsonify
 from datashape import Mono, discover
 from datashape.predicates import iscollection
 from blaze.utils import json_dumps
@@ -64,3 +64,4 @@ def upload():
     if not exists (dirname(path)):
         os.makedirs(dirname(path))
     f.save(path)
+    return jsonify(path=relpath(path, settings.data_directory))
