@@ -75,8 +75,11 @@ def test_upload_without_permissions():
 
 @with_setup(setup_function, teardown_function)
 def test_configure():
-    resp = test.post("/configure/defaultuser/test.csv",
-                     data=json.dumps({'delimiter' : '\t'}),
+    resp = test.post("/configure",
+                     data=json.dumps(
+                         {'kwargs' : {'delimiter' : '\t'},
+                          'uri' : "defaultuser/test.csv"
+                      }),
                      headers={'content-type' : 'application/json'}
     )
     assert resp.status_code == 200
@@ -86,6 +89,11 @@ def test_configure():
 @with_setup(setup_auth_test, teardown_auth_test)
 def test_configure_without_permissions():
     #monkey patch auth backend to disallow upload
-    resp = test.post("/configure/defaultuser/test.csv",
-                     data={'delimiter' : '\t'})
+    resp = test.post("/configure",
+                     data=json.dumps(
+                         {'kwargs' : {'delimiter' : '\t'},
+                          'uri' : "defaultuser/test.csv"
+                      }),
+                     headers={'content-type' : 'application/json'}
+    )
     assert resp.status_code == 403

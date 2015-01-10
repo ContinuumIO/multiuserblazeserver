@@ -1,13 +1,18 @@
+import cStringIO
+import tempfile
+from os.path import join
+
 from nose.tools import with_setup
 from blaze.utils import example
 
 from mbs.settings import settings
 from . import config_file, data_file
-import tempfile
 
 def setup_function():
     settings.reset()
     settings.data_file = tempfile.mkdtemp()
+    datadir = tempfile.mkdtemp()
+    settings.data_directory = datadir
 
 def teardown_function():
     pass
@@ -49,4 +54,12 @@ def test_all_datasets():
     settings.datamanager.configure('defaultuser', 'test.csv', delimiter="|")
     all_sets = settings.datamanager.all_datasets()
     assert set(all_sets.keys()) == {'accounts', 'cities', 'events',
-                                    'defaultuser/test.csv'}
+                                    join('defaultuser', 'test.csv')}
+
+@with_setup(setup_function, teardown_function)
+def test_ls():
+    settings.datamanager.write('firstuser', 'foo.hdf5', cStringIO.StringIO())
+    settings.datamanager.write('firstuser', 'test.csv', cStringIO.StringIO())
+    settings.datamanager.write('seconduser', 'foo2.hdf5', cStringIO.StringIO())
+    assert len(settings.datamanager.ls('firstuser')) == 2
+    assert len(settings.datamanager.ls()) == 3

@@ -1,4 +1,4 @@
-from os.path import join
+from os.path import join, dirname, exists, relpath
 import time
 import os
 import copy
@@ -15,11 +15,33 @@ class DataManager(object):
         self._storage_time = 0
         self._all_datasets = None
 
-    def parse(self, path):
-        if path.startswith(self.settings.data_directory):
-            path = relpath(path, self.settings.data_directory)
-        username, fpath = path.split("/", 1)
-        return username, fpath
+    def write(self, username, filename, fileobj):
+        path = self.data_path(username, filename, absolute=True)
+        if not exists(dirname(path)):
+            os.makedirs(dirname(path))
+        with open(path, "wb+") as f:
+            f.write(path)
+
+    def ls(self, username=None):
+        if username:
+            users = [username]
+        else:
+            users = os.listdir(self.settings.data_directory)
+        files = []
+        for u in users:
+            for fname in  os.listdir(self.data_path(u, "", absolute=True)):
+                files.append(join(u, fname))
+        return files
+
+    def parse(self, uri):
+        protocol = datapath = None
+        if '://' in uri:
+            protocol, uri = uri.split('://')
+        if '::' in uri:
+            uri, datapath = uri.split('::')
+        username = dirname(uri)
+        fpath = relpath(uri, username)
+        return protocol, username, fpath, datapath
 
     def data_path(self, username, filename, absolute=False):
         # TODO - invalid usernames makes these paths un-parseable

@@ -61,11 +61,16 @@ def upload():
     path = settings.datamanager.data_path(username, f.filename, absolute=False)
     return jsonify(path=path)
 
-@mbsbp.route("/configure/<path:path>", methods=['POST'])
-def configure(path):
-    kwargs = request.json
+@mbsbp.route("/ls/<username>", methods=['GET'])
+def ls(username=None):
+    return jsonify(files=settings.datamanager.ls(username=username))
+
+@mbsbp.route("/configure", methods=['POST'])
+def configure():
+    kwargs = request.json['kwargs']
+    uri = request.json['uri']
     username = settings.auth_backend.current_username()
-    fusername, fpath = settings.datamanager.parse(path)
+    protocol, fusername, fpath, datapath = settings.datamanager.parse(uri)
     complete_path = settings.datamanager.data_path(fusername, fpath)
     if not settings.auth_backend.can_write(complete_path, username):
         return abort(403)
