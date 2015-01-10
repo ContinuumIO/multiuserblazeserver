@@ -15,3 +15,6 @@ events = DataFrame([[1, datetime(2000, 1, 1, 12, 0, 0)],
 data = {'accounts': accounts,
         'cities': cities,
         'events': events}
+
+import tempfile
+data_file = tempfile.mkdtemp()

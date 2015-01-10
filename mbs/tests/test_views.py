@@ -38,6 +38,21 @@ def teardown_function():
     data = None
     datadir = None
 
+old = None
+
+def setup_auth_test():
+    global old
+    setup_function()
+    old = settings.auth_backend.can_write
+    def reject(path, username):
+        return False
+    settings.auth_backend.can_write = reject
+
+def teardown_auth_test():
+    teardown_function()
+    global old
+    settings.auth_backend.can_write = old
+
 @with_setup(setup_function, teardown_function)
 def test_upload():
     with open(data_file('test.csv')) as f:
@@ -49,15 +64,28 @@ def test_upload():
     assert result['path'] == "defaultuser/test.csv"
     assert exists(join(settings.data_directory, result['path']))
 
-@with_setup(setup_function, teardown_function)
+@with_setup(setup_auth_test, teardown_auth_test)
 def test_upload_without_permissions():
-    #monkey patch auth backend to disallow upload
-    def reject(path, username):
-        return False
-    settings.auth_backend.can_write = reject
     with open(data_file('test.csv')) as f:
         resp = test.post("/upload",
                          data={'file' : (f, 'test.csv')}
                      )
     assert resp.status_code == 403
     assert not exists(join(settings.data_directory, "defaultuser", "test.csv"))
+
+@with_setup(setup_function, teardown_function)
+def test_configure():
+    resp = test.post("/configure/defaultuser/test.csv",
+                     data=json.dumps({'delimiter' : '\t'}),
+                     headers={'content-type' : 'application/json'}
+    )
+    assert resp.status_code == 200
+    result = resp.data == 'success'
+    assert settings.storage['defaultuser/test.csv'] == {u'delimiter': u'\t'}
+
+@with_setup(setup_auth_test, teardown_auth_test)
+def test_configure_without_permissions():
+    #monkey patch auth backend to disallow upload
+    resp = test.post("/configure/defaultuser/test.csv",
+                     data={'delimiter' : '\t'})
+    assert resp.status_code == 403

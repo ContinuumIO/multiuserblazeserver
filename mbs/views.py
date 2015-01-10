@@ -48,20 +48,26 @@ def compserver():
     return json.dumps({'datashape': str(expr.dshape),
                        'data': result}, default=json_dumps)
 
-def data_path(username, filename):
-    filename = secure_filename(filename)
-    username_path = secure_filename(username)
-    path = join(settings.data_directory, username_path, filename)
-    return path
-
 @mbsbp.route("/upload", methods=['POST'])
 def upload():
     username = settings.auth_backend.current_username()
     f = request.files['file']
-    path = data_path(username, f.filename)
+    path = settings.datamanager.data_path(username, f.filename, absolute=True)
     if not settings.auth_backend.can_write(path, username):
         return abort(403)
     if not exists (dirname(path)):
         os.makedirs(dirname(path))
     f.save(path)
-    return jsonify(path=relpath(path, settings.data_directory))
+    path = settings.datamanager.data_path(username, f.filename, absolute=False)
+    return jsonify(path=path)
+
+@mbsbp.route("/configure/<path:path>", methods=['POST'])
+def configure(path):
+    kwargs = request.json
+    username = settings.auth_backend.current_username()
+    fusername, fpath = settings.datamanager.parse(path)
+    complete_path = settings.datamanager.data_path(fusername, fpath)
+    if not settings.auth_backend.can_write(complete_path, username):
+        return abort(403)
+    settings.datamanager.configure(fusername, fpath, **kwargs)
+    return 'success'
