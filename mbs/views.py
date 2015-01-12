@@ -75,4 +75,4 @@ def configure():
     if not settings.auth_backend.can_write(complete_path, username):
         return abort(403)
     settings.datamanager.configure(fusername, fpath, **kwargs)
-    return 'success'
+    return jsonify(status='success')

@@ -59,6 +59,24 @@ class DataManager(object):
         self.settings.storage[relpath] = kwargs
         self.settings.storage.sync()
 
+    def resolve_resource(self, uri):
+        """parses a resource (where the file base resources are stored
+        as a relative path to the data directory and resolves it
+        """
+        protocol, username, fpath, datapath = self.parse(uri)
+        if protocol and protocol != 'hdfstore':
+            raise NotImplementedError
+        path = self.data_path(username, fpath, absolute=True)
+        if protocol:
+            protocol = protocol + "://"
+        else:
+            protocol = ""
+        if datapath:
+            datapath = "::" + datapath
+        else:
+            datapath = ""
+        return protocol + path + datapath
+
     def all_datasets(self):
         storage = self.settings.storage
         last_storage_time = self._storage_time
@@ -72,7 +90,7 @@ class DataManager(object):
                 if k == '_update_time':
                     continue
                 try:
-                    result[k] = resource(join(self.settings.data_directory, k), **v)
+                    result[k] = resource(self.resolve_resource(k), **v)
                 except Exception as e:
                     import pdb;pdb.set_trace()
                     logger.exception(e)
