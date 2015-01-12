@@ -33,17 +33,6 @@ def setup_function():
     data = settings.data
     t = symbol('t', discover(data))
 
-def setup_iris():
-    global app
-    global test
-    global data
-    global t
-    config = config_file("config_iris.py")
-    app = setup_app(config_file=config)
-    test = app.test_client()
-    data = settings.data
-    t = symbol('t', discover(data))
-
 def teardown_function():
     global app
     global test
@@ -97,63 +86,6 @@ def test_get_datetimes():
     ds = datashape.dshape(result['datashape'])
     result = into(np.ndarray, result['data'], dshape=ds)
     assert into(list, result) == into(list, events)
-
-# def iris_server():
-#     iris = CSV(example('iris.csv'))
-#     server = Server(iris)
-#     return server.app.test_client()
-
-
-# iris = CSV(example('iris.csv'))
-
-@with_setup(setup_iris, teardown_function)
-def test_compute_with_variable_in_namespace():
-    iris = data
-    t = symbol('t', discover(iris))
-    pl = symbol('pl', 'float32')
-    expr = t[t.petal_length > pl].species
-    tree = to_tree(expr, {pl: 'pl'})
-
-    blob = json.dumps({'expr': tree, 'namespace': {'pl': 5}})
-    resp = test.post('/compute.json', data=blob,
-                     content_type='application/json')
-
-    assert 'OK' in resp.status
-    result = json.loads(resp.data.decode('utf-8'))['data']
-    expected = list(compute(expr._subs({pl: 5}), {t: iris}))
-    assert result == expected
-
-@with_setup(setup_iris, teardown_function)
-def test_compute_by_with_summary():
-    iris = data
-    t = symbol('t', discover(iris))
-    expr = by(t.species, max=t.petal_length.max(),
-                         sum=t.petal_width.sum())
-    tree = to_tree(expr)
-    blob = json.dumps({'expr': tree})
-    resp = test.post('/compute.json', data=blob,
-                     content_type='application/json')
-    assert 'OK' in resp.status
-    result = json.loads(resp.data.decode('utf-8'))['data']
-    expected = compute(expr, iris)
-    assert result == list(map(list, into(list, expected)))
-
-@with_setup(setup_iris, teardown_function)
-def test_compute_column_wise():
-    iris = data
-    t = symbol('t', discover(iris))
-    subexpr = ((t.petal_width / 2 > 0.5) &
-               (t.petal_length / 2 > 0.5))
-    expr = t[subexpr]
-    tree = to_tree(expr)
-    blob = json.dumps({'expr': tree})
-    resp = test.post('/compute.json', data=blob,
-                     content_type='application/json')
-
-    assert 'OK' in resp.status
-    result = json.loads(resp.data.decode('utf-8'))['data']
-    expected = compute(expr, iris)
-    assert list(map(tuple, result)) == into(list, expected)
 
 @with_setup(setup_function, teardown_function)
 def test_multi_expression_compute():

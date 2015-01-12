@@ -1,6 +1,8 @@
 import json
 from os.path import join, dirname, exists, relpath
 import os
+import traceback
+import logging
 
 from werkzeug.utils import secure_filename
 from flask import request, abort, jsonify
@@ -14,21 +16,29 @@ from blaze.expr.parser import exprify
 
 from .app import mbsbp
 from .settings import settings
+from .errors import ServerException
+
+logger = logging.getLogger(__name__)
 
 @mbsbp.route('/datashape')
 def dataset():
     return str(discover(settings.datamanager.all_datasets()))
 
-@mbsbp.route('/compute.json', methods=['POST', 'PUT', 'GET'])
-#TODO add read-only authentication checks by parsing the expr graph
-def compserver():
+
+@mbsbp.app_errorhandler(ServerException)
+def error(e):
+    response = jsonify(e.to_dict())
+    response.status_code = e.status_code
+    return response
+
+def _compserver():
     dataset = settings.datamanager.all_datasets()
     if request.headers['content-type'] != 'application/json':
-        return ("Expected JSON data", 404)
+        raise ServerException('Expected JSON data', status_code=404)
     try:
         payload = json.loads(request.data.decode('utf-8'))
     except ValueError:
-        return ("Bad JSON.  Got %s " % request.data, 404)
+        raise ServerException('Bad JSON.  Got %s' % request.data, status_code=404)
 
     ns = payload.get('namespace', dict())
 
@@ -41,12 +51,17 @@ def compserver():
     try:
         result = compute(expr, {leaf: dataset})
     except Exception as e:
-        import pdb;pdb.set_trace()
-        return ("Computation failed with message:\n%s" % e, 500)
-
+        logger.exception(e)
+        msg = traceback.format_exc()
+        raise ServerException(msg, status_code=500)
     if iscollection(expr.dshape):
         result = into(list, result)
+    return expr, result
 
+@mbsbp.route('/compute.json', methods=['POST', 'PUT', 'GET'])
+#TODO add read-only authentication checks by parsing the expr graph
+def compserver():
+    expr, result = _compserver()
     return json.dumps({'datashape': str(expr.dshape),
                        'data': result}, default=json_dumps)
 
