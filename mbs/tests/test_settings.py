@@ -43,7 +43,6 @@ def test_dataset_storage():
 
 @with_setup(setup_function, teardown_function)
 def test_all_datasets():
-    iris_file = example('iris.csv')
     config = config_file("config.py")
     settings.from_pyfile(config)
     settings.data_directory = data_file('datadir')
@@ -51,10 +50,20 @@ def test_all_datasets():
     assert set(all_sets.keys()) == {'accounts', 'cities', 'events'}
 
     #now we introduce an error by adding a csv that has tab separators
-    settings.datamanager.configure('defaultuser', 'test.csv', delimiter="|")
+    settings.datamanager.configure('defaultuser/test.csv', delimiter="|")
+    path = join('defaultuser', 'test.hdf5')
+    uri1 = 'hdfstore://%s' % path
+    settings.datamanager.configure(uri1)
+    uri2 = 'hdfstore://%s::temp' % path
+    settings.datamanager.configure(uri2)
     all_sets = settings.datamanager.all_datasets()
     assert set(all_sets.keys()) == {'accounts', 'cities', 'events',
-                                    join('defaultuser', 'test.csv')}
+                                    join('defaultuser', 'test.csv'),
+                                    uri1, uri2
+    }
+    assert all_sets[uri1]['temp'].shape == (5,1)
+    #why is this one a list?!
+    assert all_sets[uri2].shape == [5,1]
 
 @with_setup(setup_function, teardown_function)
 def test_ls():

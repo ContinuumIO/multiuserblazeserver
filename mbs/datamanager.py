@@ -53,10 +53,9 @@ class DataManager(object):
         else:
             return join(username, filename)
 
-    def configure(self, username, filename, **kwargs):
-        relpath = self.data_path(username, filename, absolute=False)
+    def configure(self, uri, **kwargs):
         self.settings.storage['_update_time'] = time.time()
-        self.settings.storage[relpath] = kwargs
+        self.settings.storage[uri] = kwargs
         self.settings.storage.sync()
 
     def resolve_resource(self, uri):
@@ -92,8 +91,8 @@ class DataManager(object):
                 try:
                     result[k] = resource(self.resolve_resource(k), **v)
                 except Exception as e:
-                    import pdb;pdb.set_trace()
                     logger.exception(e)
+                    raise
             self._all_datasets = result
             self._storage_time = last_change
         return self._all_datasets
