@@ -17,12 +17,12 @@ from .settings import settings
 
 @mbsbp.route('/datashape')
 def dataset():
-    return str(discover(settings.data))
+    return str(discover(settings.datamanager.all_datasets()))
 
 @mbsbp.route('/compute.json', methods=['POST', 'PUT', 'GET'])
 #TODO add read-only authentication checks by parsing the expr graph
 def compserver():
-    dataset = settings.data
+    dataset = settings.datamanager.all_datasets()
     if request.headers['content-type'] != 'application/json':
         return ("Expected JSON data", 404)
     try:
@@ -31,6 +31,7 @@ def compserver():
         return ("Bad JSON.  Got %s " % request.data, 404)
 
     ns = payload.get('namespace', dict())
+
     ns[':leaf'] = symbol('leaf', discover(dataset))
 
     expr = from_tree(payload['expr'], namespace=ns)
@@ -40,6 +41,7 @@ def compserver():
     try:
         result = compute(expr, {leaf: dataset})
     except Exception as e:
+        import pdb;pdb.set_trace()
         return ("Computation failed with message:\n%s" % e, 500)
 
     if iscollection(expr.dshape):
@@ -62,6 +64,7 @@ def upload():
     return jsonify(path=path)
 
 @mbsbp.route("/ls/<username>", methods=['GET'])
+@mbsbp.route("/ls", methods=['GET'])
 def ls(username=None):
     return jsonify(files=settings.datamanager.ls(username=username))
 
@@ -69,10 +72,14 @@ def ls(username=None):
 def configure():
     kwargs = request.json['kwargs']
     uri = request.json['uri']
+    delete = request.json.get('_delete', False)
     username = settings.auth_backend.current_username()
     protocol, fusername, fpath, datapath = settings.datamanager.parse(uri)
     complete_path = settings.datamanager.data_path(fusername, fpath)
     if not settings.auth_backend.can_write(complete_path, username):
         return abort(403)
-    settings.datamanager.configure(uri.encode('utf-8'), **kwargs)
+    if delete:
+        settings.datamanager.delete(uri.encode('utf-8'))
+    else:
+        settings.datamanager.configure(uri.encode('utf-8'), **kwargs)
     return jsonify(status='success')

@@ -70,5 +70,6 @@ def test_ls():
     settings.datamanager.write('firstuser', 'foo.hdf5', cStringIO.StringIO())
     settings.datamanager.write('firstuser', 'test.csv', cStringIO.StringIO())
     settings.datamanager.write('seconduser', 'foo2.hdf5', cStringIO.StringIO())
+    import pdb;pdb.set_trace()
     assert len(settings.datamanager.ls('firstuser')) == 2
     assert len(settings.datamanager.ls()) == 3

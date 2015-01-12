@@ -1,4 +1,4 @@
-from os.path import join, dirname, exists, relpath
+from os.path import join, dirname, exists, relpath, isdir
 import time
 import os
 import copy
@@ -29,7 +29,10 @@ class DataManager(object):
             users = os.listdir(self.settings.data_directory)
         files = []
         for u in users:
-            for fname in  os.listdir(self.data_path(u, "", absolute=True)):
+            dirpath = self.data_path(u, "", absolute=True)
+            if not isdir(dirpath):
+                continue
+            for fname in os.listdir(dirpath):
                 files.append(join(u, fname))
         return files
 
@@ -56,6 +59,11 @@ class DataManager(object):
     def configure(self, uri, **kwargs):
         self.settings.storage['_update_time'] = time.time()
         self.settings.storage[uri] = kwargs
+        self.settings.storage.sync()
+
+    def delete(self, uri):
+        self.settings.storage['_update_time'] = time.time()
+        self.settings.storage.pop(uri, None)
         self.settings.storage.sync()
 
     def resolve_resource(self, uri):

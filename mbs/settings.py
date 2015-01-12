@@ -1,6 +1,6 @@
 import os
 import time
-from os.path import getmtime, exists, abspath
+from os.path import getmtime, exists, abspath, join
 import shelve
 import imp
 import uuid
@@ -14,7 +14,7 @@ from .datamanager import DataManager
 logger = logging.getLogger(__name__)
 
 defaults = dict(
-    data_directory=os.getcwd(),
+    data_directory=join(os.getcwd(), "mbsdata"),
     data={},
     multi_user=False,
     ip="0.0.0.0",
@@ -38,8 +38,10 @@ class Settings(object):
             setattr(self, k, copy.copy(v))
         self.close_storage()
 
-    def validate(self):
+    def postprocess(self):
         self.data_directory = abspath(self.data_directory)
+        if not exists(self.data_directory):
+            os.makedirs(self.data_directory)
         self.data_file = abspath(self.data_file)
 
     def close_storage(self):
@@ -59,7 +61,7 @@ class Settings(object):
             v = getattr(mod, k, None)
             if v is not None:
                 setattr(self, k, v)
-        self.validate()
+        self.postprocess()
 
     @property
     def storage(self):
