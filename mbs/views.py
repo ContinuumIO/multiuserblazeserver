@@ -39,7 +39,6 @@ def _compserver():
         payload = json.loads(request.data.decode('utf-8'))
     except ValueError:
         raise ServerException('Bad JSON.  Got %s' % request.data, status_code=404)
-
     ns = payload.get('namespace', dict())
 
     ns[':leaf'] = symbol('leaf', discover(dataset))
@@ -54,14 +53,14 @@ def _compserver():
         logger.exception(e)
         msg = traceback.format_exc()
         raise ServerException(msg, status_code=500)
-    if iscollection(expr.dshape):
-        result = into(list, result)
     return expr, result
 
 @mbsbp.route('/compute.json', methods=['POST', 'PUT', 'GET'])
 #TODO add read-only authentication checks by parsing the expr graph
 def compserver():
     expr, result = _compserver()
+    if iscollection(expr.dshape):
+        result = into(list, result)
     return json.dumps({'datashape': str(expr.dshape),
                        'data': result}, default=json_dumps)
 
