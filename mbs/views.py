@@ -31,14 +31,8 @@ def error(e):
     response.status_code = e.status_code
     return response
 
-def _compserver():
+def _compserver(payload):
     dataset = settings.datamanager.all_datasets()
-    if request.headers['content-type'] != 'application/json':
-        raise ServerException('Expected JSON data', status_code=404)
-    try:
-        payload = json.loads(request.data.decode('utf-8'))
-    except ValueError:
-        raise ServerException('Bad JSON.  Got %s' % request.data, status_code=404)
     ns = payload.get('namespace', dict())
 
     ns[':leaf'] = symbol('leaf', discover(dataset))
@@ -58,7 +52,10 @@ def _compserver():
 @mbsbp.route('/compute.json', methods=['POST', 'PUT', 'GET'])
 #TODO add read-only authentication checks by parsing the expr graph
 def compserver():
-    expr, result = _compserver()
+    if not request.json:
+        raise ServerException('Expected JSON data', status_code=404)
+    payload = request.json
+    expr, result = _compserver(payload)
     if iscollection(expr.dshape):
         result = into(list, result)
     return json.dumps({'datashape': str(expr.dshape),
