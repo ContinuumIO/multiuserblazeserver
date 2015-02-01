@@ -59,6 +59,7 @@ def compserver():
     if iscollection(expr.dshape):
         result = into(list, result)
     return json.dumps({'datashape': str(expr.dshape),
+                       'names' : expr.fields,
                        'data': result}, default=json_dumps)
 
 @mbsbp.route("/upload", methods=['POST'])
