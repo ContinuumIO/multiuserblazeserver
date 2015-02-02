@@ -7,6 +7,7 @@ import uuid
 import copy
 import logging
 
+from six import iteritems
 
 from .auth import SingleUserAuthenticationBackend
 from .datamanager import DataManager
@@ -34,7 +35,7 @@ class Settings(object):
         self._datamanager = None
 
     def reset(self):
-        for k,v in defaults.iteritems():
+        for k,v in defaults.items():
             setattr(self, k, copy.copy(v))
         self.close_storage()
 
