@@ -7,8 +7,6 @@ import uuid
 import copy
 import logging
 
-from six import iteritems
-
 from .auth import SingleUserAuthenticationBackend
 from .datamanager import DataManager
 
