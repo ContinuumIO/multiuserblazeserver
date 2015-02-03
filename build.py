@@ -37,8 +37,8 @@ if __name__ == "__main__":
     args = p.parse_args()
     build_dir = p.add_argument("build_dir")
 
-    #build("conda.recipe", args.build_dir, args.py, args.plat, args.binstar_user)
-    build("../into/conda.recipe", args.build_dir, args.py, args.plat, args.binstar_user)
+    build("conda.recipe", args.build_dir, args.py, args.plat, args.binstar_user)
+    #build("../into/conda.recipe", args.build_dir, args.py, args.plat, args.binstar_user)
     """
     python build.py /opt/anaconda/conda-bld/linux-64 --py 27 --py 34 --plat osx-64 --plat win-64 -u hugo
     """
